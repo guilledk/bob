@@ -5,7 +5,8 @@ strnode* sn_new(char *str) {
 	
 	strnode *node = (strnode*) malloc(sizeof(strnode));
 	
-	node->str = str;
+	node->str = (char*)malloc(strlen(str));
+	strcpy(node->str, str);
 	node->hash = hash(str);
 	
 	return node;

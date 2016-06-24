@@ -9,12 +9,27 @@
 #define LIB_PATH  193462236
 #define LIB       863133480
 
+#define MAX_ARG_SIZE 256
+
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <string.h>
 
 #include "strlist.h"
 
 const unsigned short VERSION = 1;
 const char          *SOURCE_EXTENSIONS[3] = { ".c", ".cc", ".cpp" };
+
+char *main_src = NULL;
+char *src_path = NULL;
+char *exe_path = NULL;
+char *obj_path = NULL;
+strlist *inc_paths;
+strlist *lib_paths;
+strlist *libs;
+FILE *config;
+
+void bob_exit(int exitcode);
 
 #endif
