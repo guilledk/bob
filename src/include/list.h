@@ -68,6 +68,4 @@ void    lprint(list_t *list);
 node_t* ldelf (list_t *list);
 bool    lempty(list_t *list);
 
-const unsigned long hash(const char *str);
-
 #endif

@@ -16,6 +16,7 @@
 #define LIB       863133480  //Names of .lib files to use when linking
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -41,6 +42,8 @@ FILE *config;
 
 list_t* bob_sources(const char *path);
 char* bob_strcat(const char *str1, const char *str2);
+unsigned long bob_hashfile(const char *path);
 void bob_exit(int exitcode);
+const unsigned long hash(const char *str);
 
 #endif

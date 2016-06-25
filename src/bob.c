@@ -159,12 +159,12 @@ int main (int argc, char** argv) {
 		printf("'%s' not found.\n", src_path);
 		bob_exit(1);
 	}
-	
-	list_t *sources = bob_sources(src_path);
-	lprint(sources);
-	
+	/* PUT THIS AT THE BOTTOM
 	char *compile_comand = "cl /EHsc /MD /c ";
 	compile_comand = bob_strcat(compile_comand, main_src);
+	*/
+	list_t *prev_sources = lnew();
+	list_t *prev_hashes = lnew();
 	
 	if(_stat(ch_file,&buf) == 0) {
 		printf("Change file exists!\n");
@@ -177,17 +177,52 @@ int main (int argc, char** argv) {
 			printf("Can't open change file!\n");
 			bob_exit(1);
 		}
-		while(fgets(line, sizeof line, config) != NULL) {
-			char *filename = strtok(line,SEPARATOR);
-			char *filehash = strtok(NULL,SEPARATOR);
+		while(fgets(line, sizeof line, chfile) != NULL) {
+			char *filename = strtok(line,":");
+			unsigned long filehash = atol(strtok(NULL,":"));
+			
+			gvalue filename_gv;
+			filename_gv._str = (char*)malloc(strlen(filename));
+			strcpy(filename_gv._str,filename);
+			ladd(prev_sources,gvt_new(filename_gv,T_STR));
+			
+			gvalue filehash_gv;
+			filehash_gv._ulong = filehash;
+			ladd(prev_hashes,gvt_new(filehash_gv,T_ULONG));
+			
 		}
+		fclose(chfile);
+		printf("Change file contents:\n");
+		printf("Prev files:  ");
+		lprint(prev_sources);
+		printf("Prev hashes: ");
+		lprint(prev_hashes);
 	} else {
 		printf("Creating change file...\n");
 	}
 	
-	printf("%zu\n", sizeof(gvalue));
+	list_t *sources = bob_sources(src_path);
+	list_t *hashes = lnew();
 	
-	free(compile_comand);
+	node_t *cur = sources->head;
+	for(int i = 0; i < sources->size; i++){
+		gvalue src_hash;
+		char *fullpath = bob_strcat(src_path,"\\");
+		src_hash._ulong = bob_hashfile(bob_strcat(fullpath,cur->value->value._str));
+		ladd(hashes,gvt_new(src_hash,T_ULONG));
+		cur = cur->next;
+		free(fullpath);
+	}
+	
+	printf("Files:  ");
+	lprint(sources);
+	printf("Hashes: ");
+	lprint(hashes);
+	
+	lfree(prev_sources);
+	lfree(prev_hashes);
+	
+	//free(compile_comand);
 	
 	bob_exit(0);
 	
@@ -239,6 +274,34 @@ char* bob_strcat(const char *str1, const char *str2) {
 	
 }
 
+unsigned long bob_hashfile(const char *path) {
+	
+	FILE *fileptr = fopen(path,"r");
+	if(!fileptr){
+		printf("Error getting file hash! %s\n", path);
+		return 0;
+	}
+	if(fseek(fileptr,0,SEEK_END)) {
+		printf("fseek Error! %s\n", path);
+		return 0;
+	}
+	long fsize = ftell(fileptr);
+	printf("Hashing file of size: %ld\n", fsize);
+	if(fseek(fileptr,0,SEEK_SET)) {
+		printf("fseek Error! %s\n", path);
+		return 0;
+	}
+	
+	char *filecontent = (char*)malloc(fsize + 1);
+	fread(filecontent, fsize, 1, fileptr);
+	fclose(fileptr);
+	filecontent[fsize] = 0;
+	unsigned long fhash = hash(filecontent);
+	free(filecontent);
+	return fhash;
+	
+}
+
 void bob_exit(int exitcode) {
 	if(config)
 		fclose(config);
@@ -261,4 +324,15 @@ void bob_exit(int exitcode) {
 	
 	system("PAUSE");
 	exit(exitcode);
+}
+
+const unsigned long hash(const char *str){
+	
+	unsigned long hash = 5381;  
+    int c;
+ 
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c;
+    return hash;
+	
 }
