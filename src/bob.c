@@ -1,5 +1,10 @@
 #include "bob.h"
 
+//bob.exe exitcodes
+//0 - success
+//1 - file error
+//2 - argument error
+
 int main (int argc, char** argv) {
 	
 	printf("bob v%u\n", VERSION);
@@ -12,20 +17,64 @@ int main (int argc, char** argv) {
 		
 			i++;
 			ch_file = *(argv+i);
+			if(ch_file == NULL || ch_file[0] == '\0') {
+				printf("Wrong argument to option '-ch'\n");
+				bob_exit(2);
+			}
+				
 			printf("Using change file: '%s'\n", ch_file);
 			break;
 		
 		}
-		case ARG_C : {
+		case ARG_C  : {
 		
 			i++;
 			conf_fle = *(argv+i);
+			if(conf_fle == NULL || conf_fle[0] == '\0') {
+				printf("Wrong argument to option '-c'\n");
+				bob_exit(2);
+			}
 			printf("Using build file: '%s'\n", conf_fle);
 			break;
 		
 		}
-		default    : {
-			printf("Can't parse argument: %s\nhash: %u\n", *(argv+i), arghash);
+		case ARG_D  : {
+			
+			i++;
+			char *debug_mode_str = *(argv+i);
+			if(debug_mode_str == NULL || debug_mode_str[0] == '\0') {
+				printf("Wrong argument to option '-d'\n");
+				bob_exit(2);
+			}
+			switch(hash(debug_mode_str)) {
+			
+			case _DM_ALL    : {
+				dmode = DM_ALL;
+				printf("Debug mode: ALL\n");
+				break;
+			}
+			case _DM_MEDIUM : {
+				dmode = DM_MEDIUM;
+				printf("Debug mode: MEDIUM\n");
+				break;
+			}
+			case _DM_NONE   : {
+				dmode = DM_NONE;
+				printf("Debug mode: NONE\n");
+				break;
+			}
+			default         : {
+				printf("Debug mode: '%s' not recognized!\n", debug_mode_str);
+				bob_exit(2);
+				break;
+			}
+			
+			}
+			break;
+			
+		}
+		default     : {
+			printf("Can't parse argument: %s\nhash: %lu\n", *(argv+i), arghash);
 			bob_exit(2);
 			break;
 		}
@@ -66,17 +115,24 @@ int main (int argc, char** argv) {
 		char *sline = strtok(line,SEPARATOR);
 		char *tmp = strtok(NULL,SEPARATOR);
 		switch(hash(sline)) {
-			
+		
+		case AD_PARAM  : {
+			ad_param = (char*)malloc(strlen(tmp));
+			strcpy(ad_param,tmp);
+			printf("Additional parameters: %s\n", ad_param);
+			break;
+		}
+		
 		case SRC_PATH  : {
 			src_path = (char*)malloc(strlen(tmp));
 			strcpy(src_path,tmp);
-			printf("Source path:        %s\n", src_path);
+			printf("Source path:           %s\n", src_path);
 			break;
 		}
 		case MAIN_SRC  : {
 			main_src = (char*)malloc(strlen(tmp));
 			strcpy(main_src,tmp);
-			printf("Main source:        %s\n", main_src);
+			printf("Main source:           %s\n", main_src);
 			break;
 		}
 		case INC_PATH  : {
@@ -86,19 +142,19 @@ int main (int argc, char** argv) {
 			strcpy(inc_path._str,tmp);
 			
 			ladd(inc_paths,gvtnew(inc_path,T_STR));
-			printf("Include path:       %s\n", tmp);
+			printf("Include path:          %s\n", tmp);
 			break;
 		}
 		case EXE_PATH  : {
 			exe_path = (char*)malloc(strlen(tmp));
 			strcpy(exe_path,tmp);
-			printf("Executable path:    %s\n", exe_path);
+			printf("Executable path:       %s\n", exe_path);
 			break;
 		}
 		case OBJ_PATH  : {
 			obj_path = (char*)malloc(strlen(tmp));
 			strcpy(obj_path,tmp);
-			printf("Object path:        %s\n", obj_path);
+			printf("Object path:           %s\n", obj_path);
 			break;
 		}
 		case LIB_PATH  : {
@@ -108,7 +164,7 @@ int main (int argc, char** argv) {
 			strcpy(lib_path._str,tmp);
 			
 			ladd(lib_paths,gvtnew(lib_path,T_STR));
-			printf("Library path:       %s\n", tmp);
+			printf("Library path:          %s\n", tmp);
 			break;
 		}
 		case LIB       : {
@@ -118,17 +174,17 @@ int main (int argc, char** argv) {
 			strcpy(lib._str,tmp);
 			
 			ladd(libs,gvtnew(lib,T_STR));
-			printf("Library:            %s\n", tmp);
+			printf("Library:               %s\n", tmp);
 			break;
 		}
 		case VCVARSALL : {
 			vcvarsall = (char*)malloc(strlen(tmp));
 			strcpy(vcvarsall,tmp);
-			printf("vcvarsall:          %s\n", tmp);
+			printf("vcvarsall:             %s\n", tmp);
 			break;
 		}
 		default : {
-			printf("Syntax error, hash: %u\n", hash(sline));
+			printf("Syntax error, hash:    %u\n", hash(sline));
 			break;
 		}
 			
@@ -253,7 +309,11 @@ int main (int argc, char** argv) {
 		}
 	}
 	
-	char *compile_command = "cl /EHsc /MD /c ";
+	char *compile_command = "cl /c ";
+	//Concat additional parameters
+	if(ad_param) {
+		compile_command = bob_strcat(compile_command,bob_strcat(ad_param," "));
+	}
 	
 	{ //Concatenate all the sources to the compile command
 		
@@ -396,6 +456,8 @@ void bob_exit(int exitcode) {
 	if(config)
 		fclose(config);
 	
+	if(ad_param)
+		free(ad_param);
 	if(main_src)
 		free(main_src);
 	if(src_path)
