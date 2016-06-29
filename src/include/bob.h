@@ -5,8 +5,8 @@
 #define ARG_CH    193429373 //change file, if not present "bbuild.cf" will be used
 #define ARG_C     5861493   //config file, if not present "buildcfg.bf" will be used
 #define ARG_D     5861494   //debug mode, if not present DM_NONE will be used
-	#define _DM_NONE	2090551285 //print no debug messages
-	#define _DM_MEDIUM	226336838  //print some debug messages
+	#define _DM_NONE    2090551285 //print no debug messages
+	#define _DM_MEDIUM  226336838  //print some debug messages
 	#define _DM_ALL     193486302  //print all debug messages - verbose!
 //Build File keywords
 #define VCVARSALL 1657761011 //Path to vcvarsall.bat file
