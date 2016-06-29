@@ -39,6 +39,10 @@ list_t *inc_paths;
 list_t *lib_paths;
 list_t *libs;
 FILE *config;
+list_t *sources;
+list_t *hashes;
+list_t *prev_sources;
+list_t *prev_hashes;
 
 list_t* bob_sources(const char *path);
 char* bob_strcat(const char *str1, const char *str2);

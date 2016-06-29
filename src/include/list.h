@@ -38,8 +38,9 @@ struct tagged_generic_value {
 	
 } typedef gvalue_t;
 
-gvalue_t* gvt_new (gvalue value, char type);
-void      gvt_free(gvalue_t *gvt);
+gvalue_t* gvtnew (gvalue value, char type);
+void      gvtfree(gvalue_t *gvt);
+bool      gvtcmp (gvalue_t *a, gvalue_t *b);
 
 //LINKED LIST IMPLEMENTATION
 
@@ -52,6 +53,7 @@ struct node {
 
 node_t* nnew (gvalue_t *val);
 void    nfree(node_t *node);
+bool    ncmp (node_t *a, node_t *b);
 
 struct list {
 	
@@ -67,5 +69,7 @@ void    laddf (list_t *list, gvalue_t *val);
 void    lprint(list_t *list);
 node_t* ldelf (list_t *list);
 bool    lempty(list_t *list);
+int     lhas  (list_t *list, gvalue_t *val);
+node_t* lgetat(list_t *list, unsigned short index);
 
 #endif

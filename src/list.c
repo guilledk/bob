@@ -1,6 +1,6 @@
-#include "list.h"
+#include "list.h" 
 
-gvalue_t* gvt_new(gvalue value, char type) {
+gvalue_t* gvtnew(gvalue value, char type) {
 	
 	gvalue_t *new = (gvalue_t*)malloc(sizeof(gvalue_t));
 	
@@ -11,10 +11,66 @@ gvalue_t* gvt_new(gvalue value, char type) {
 	
 }
 
-void      gvt_free(gvalue_t *gvt) {
+void      gvtfree(gvalue_t *gvt) {
 	
 	if(gvt)
 		free(gvt);
+	
+}
+
+bool      gvtcmp(gvalue_t *a, gvalue_t *b) {
+	
+	if(a->type == b->type){
+		switch (a->type) {
+			
+		case T_CHAR : {
+			return (a->value._char == b->value._char);
+			break;
+		}
+		case T_STR : {
+			return (strcmp(a->value._str,b->value._str) == 0);
+			break;
+		}
+		case T_SCHAR : {
+			return (a->value._schar == b->value._schar);
+			break;
+		} 
+		case T_SHORT : {
+			return (a->value._short == b->value._short);
+			break;
+		}
+		case T_USHORT : {
+			return (a->value._ushort == b->value._ushort);
+			break;
+		}
+		case T_INT : {
+			return (a->value._int == b->value._int);
+			break;
+		}
+		case T_UINT : {
+			return (a->value._uint == b->value._uint);
+			break;
+		}
+		case T_LONG : {
+			return (a->value._long == b->value._long);
+			break;
+		}
+		case T_ULONG : {
+			return (a->value._ulong == b->value._ulong);
+			break;
+		}
+		case T_FLOAT : {
+			return (fabs(a->value._float - b->value._float) < 0.00001);
+			break;
+		}
+		default : {
+			return false;
+			break;
+		}
+		
+		}
+	}
+	return false;
 	
 }
 
@@ -32,9 +88,15 @@ node_t*   nnew(gvalue_t *val) {
 void      nfree(node_t *node) {
 	
 	if(node->value)
-		gvt_free(node->value);
+		gvtfree(node->value);
 	if(node)
 		free(node); //:D
+	
+}
+
+bool      ncmp (node_t *a, node_t *b) {
+	
+	return gvtcmp(a->value,b->value);
 	
 }
 
@@ -178,5 +240,36 @@ node_t*   ldell(list_t *list) {
 bool      lempty(list_t *list) {
 	
 	return list->head == NULL;
+	
+}
+
+int       lhas  (list_t *list, gvalue_t *val) {
+	
+	int result = -1;
+	node_t *cur = list->head;
+	for(int i = 0; i < list->size; i++){
+		if(gvtcmp(cur->value,val)) {
+			result = i;
+			break;
+		}
+		cur = cur->next;
+	}
+	return result;
+	
+}
+
+node_t*   lgetat(list_t *list, unsigned short index) {
+	
+	if(index > list->size - 1)
+		return NULL;
+	
+	if(index == 0)
+		return list->head;
+	
+	node_t *cur = list->head;
+	for(int i = 0; i < index; i++){
+		cur = cur->next;
+	}
+	return cur;
 	
 }

@@ -85,7 +85,7 @@ int main (int argc, char** argv) {
 			inc_path._str = (char*)malloc(strlen(tmp));
 			strcpy(inc_path._str,tmp);
 			
-			ladd(inc_paths,gvt_new(inc_path,T_STR));
+			ladd(inc_paths,gvtnew(inc_path,T_STR));
 			printf("Include path:       %s\n", tmp);
 			break;
 		}
@@ -107,7 +107,7 @@ int main (int argc, char** argv) {
 			lib_path._str = (char*)malloc(strlen(tmp));
 			strcpy(lib_path._str,tmp);
 			
-			ladd(lib_paths,gvt_new(lib_path,T_STR));
+			ladd(lib_paths,gvtnew(lib_path,T_STR));
 			printf("Library path:       %s\n", tmp);
 			break;
 		}
@@ -117,7 +117,7 @@ int main (int argc, char** argv) {
 			lib._str = (char*)malloc(strlen(tmp));
 			strcpy(lib._str,tmp);
 			
-			ladd(libs,gvt_new(lib,T_STR));
+			ladd(libs,gvtnew(lib,T_STR));
 			printf("Library:            %s\n", tmp);
 			break;
 		}
@@ -159,13 +159,11 @@ int main (int argc, char** argv) {
 		printf("'%s' not found.\n", src_path);
 		bob_exit(1);
 	}
-	/* PUT THIS AT THE BOTTOM
-	char *compile_comand = "cl /EHsc /MD /c ";
-	compile_comand = bob_strcat(compile_comand, main_src);
-	*/
-	list_t *prev_sources = lnew();
-	list_t *prev_hashes = lnew();
 	
+	prev_sources = lnew();
+	prev_hashes = lnew();
+	
+	//READ CHANGE FILE IF IT EXISTS
 	if(_stat(ch_file,&buf) == 0) {
 		printf("Change file exists!\n");
 		if(ch_file == NULL){
@@ -178,17 +176,18 @@ int main (int argc, char** argv) {
 			bob_exit(1);
 		}
 		while(fgets(line, sizeof line, chfile) != NULL) {
-			char *filename = strtok(line,":");
-			unsigned long filehash = atol(strtok(NULL,":"));
+			char *filename = strtok(line,SEPARATOR);
+			char *unconvhash = strtok(NULL,SEPARATOR);
+			unsigned long filehash = strtoul(unconvhash, (char**)NULL, 10);
 			
 			gvalue filename_gv;
 			filename_gv._str = (char*)malloc(strlen(filename));
 			strcpy(filename_gv._str,filename);
-			ladd(prev_sources,gvt_new(filename_gv,T_STR));
+			ladd(prev_sources,gvtnew(filename_gv,T_STR));
 			
 			gvalue filehash_gv;
 			filehash_gv._ulong = filehash;
-			ladd(prev_hashes,gvt_new(filehash_gv,T_ULONG));
+			ladd(prev_hashes,gvtnew(filehash_gv,T_ULONG));
 			
 		}
 		fclose(chfile);
@@ -197,32 +196,123 @@ int main (int argc, char** argv) {
 		lprint(prev_sources);
 		printf("Prev hashes: ");
 		lprint(prev_hashes);
-	} else {
-		printf("Creating change file...\n");
 	}
 	
-	list_t *sources = bob_sources(src_path);
-	list_t *hashes = lnew();
+	sources = bob_sources(src_path);
+	hashes = lnew();
 	
+	//Creating this builds change file.
 	node_t *cur = sources->head;
 	for(int i = 0; i < sources->size; i++){
 		gvalue src_hash;
 		char *fullpath = bob_strcat(src_path,"\\");
 		src_hash._ulong = bob_hashfile(bob_strcat(fullpath,cur->value->value._str));
-		ladd(hashes,gvt_new(src_hash,T_ULONG));
+		ladd(hashes,gvtnew(src_hash,T_ULONG));
 		cur = cur->next;
 		free(fullpath);
 	}
-	
+	//TODO print this only if debug on
 	printf("Files:  ");
 	lprint(sources);
 	printf("Hashes: ");
 	lprint(hashes);
 	
-	lfree(prev_sources);
-	lfree(prev_hashes);
+	{ //Write new change file
+		
+		FILE *chfile = fopen(ch_file,"w");
+		if(chfile == NULL){
+			printf("Can't open change file!\n");
+			bob_exit(1);
+		}
+		node_t *curs = sources->head;
+		node_t *curh = hashes->head;
+		printf("-NEW CHANGE FILE BEGIN-\n");
+		for(int i = 0; i < sources->size; i++){
+			printf("%s%s%lu\n", curs->value->value._str, SEPARATOR, curh->value->value._ulong);
+			fprintf(chfile, "%s%s%lu\n", curs->value->value._str, SEPARATOR, curh->value->value._ulong);
+			curs = curs->next;
+			curh = curh->next;
+		}
+		fclose(chfile);
+		printf("--NEW CHANGE FILE END--\n");
+		
+	}
 	
-	//free(compile_comand);
+	{ //Compare previous source hashes and current hashes
+		node_t *cur = sources->head;
+		for(int i = 0; i < sources->size; i++){
+			int index = lhas(prev_sources,cur->value);
+			if(index != -1){
+				node_t *prevh = lgetat(prev_hashes,index);
+				node_t *curh = lgetat(hashes,i);
+				if(ncmp(prevh,curh) && strcmp(bob_strcat(src_path,bob_strcat("\\",cur->value->value._str)),main_src) != 0){
+					cur->value->value._str = NULL;
+				}
+			}
+			cur = cur->next;
+		}
+	}
+	
+	char *compile_command = "cl /EHsc /MD /c ";
+	
+	{ //Concatenate all the sources to the compile command
+		
+		node_t *cur = sources->head;
+		for(int i = 0; i < sources->size; i++){
+			printf("%s\n", cur->value->value._str);
+			if(!cur->value->value._str)
+				continue;
+			
+			compile_command = bob_strcat(compile_command, bob_strcat(src_path,bob_strcat("\\",bob_strcat(cur->value->value._str," "))));
+			cur = cur->next;
+		}
+		
+	}
+
+	//Concat obj path
+	compile_command = bob_strcat(compile_command,bob_strcat("/Fo.\\", obj_path));
+	
+	{ //Concatenate all the include directorys to the compile command
+		
+		node_t *cur = inc_paths->head;
+		for(int i = 0; i < inc_paths->size; i++){
+			compile_command = bob_strcat(compile_command, bob_strcat(" /I.\\", cur->value->value._str));
+			cur = cur->next;
+		}
+		
+	}
+	
+	char *link_command = bob_strcat("link ",bob_strcat(obj_path,"*.obj /ENTRY:mainCRTStartup"));
+	
+	{ //Concatenate all libpaths
+		
+		node_t *cur = lib_paths->head;
+		for(int i = 0; i < lib_paths->size; i++){
+			link_command = bob_strcat(link_command, bob_strcat(" /LIBPATH:.\\", cur->value->value._str));
+			cur = cur->next;
+		}
+	}
+	
+	{ //Concatenate all libs
+		
+		node_t *cur = libs->head;
+		for(int i = 0; i < libs->size; i++){
+			link_command = bob_strcat(link_command, bob_strcat(" ", cur->value->value._str));
+			cur = cur->next;
+		}
+	}
+	
+	//Concat exe path
+	link_command = bob_strcat(link_command,bob_strcat(" /OUT:", exe_path));
+	
+	printf("\nCompiler command:\n\t%s\n\n", compile_command);
+	printf("Linker command:\n\t%s\n\n", link_command);
+	
+	system(vcvarsall);
+	system(compile_command);
+	system(link_command);
+	
+	free(compile_command);
 	
 	bob_exit(0);
 	
@@ -251,7 +341,7 @@ list_t* bob_sources(const char *path) {
 			gvalue filename;
 			filename._str = (char*)malloc(strlen(ep->d_name));
 			strcpy(filename._str,ep->d_name);
-			ladd(src_list,gvt_new(filename,T_STR));
+			ladd(src_list,gvtnew(filename,T_STR));
 		}
 	}
 		
@@ -321,6 +411,14 @@ void bob_exit(int exitcode) {
 		lfree(lib_paths);
 	if(libs)
 		lfree(libs);
+	if(sources)
+		lfree(sources);
+	if(hashes)
+		lfree(hashes);
+	if(prev_sources)
+		lfree(prev_sources);
+	if(prev_hashes)
+		lfree(prev_hashes);
 	
 	system("PAUSE");
 	exit(exitcode);
