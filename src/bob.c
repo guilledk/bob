@@ -4,6 +4,8 @@
 //0 - success
 //1 - file error
 //2 - argument error
+//3 - compiler error
+//4 - linker error
 
 void parse_args(int argc, char** argv) {
 	
@@ -337,9 +339,9 @@ void get_src_diff(void) {
 	
 }
 
-char* create_compile(void) {
+void create_compile(void) {
 	
-	char *compile_command = "cl /c ";
+	compile_command = "cl /c ";
 	//Concat additional parameters
 	if(ad_param) {
 		compile_command = bob_strcat(compile_command,bob_strcat(ad_param," "));
@@ -371,13 +373,11 @@ char* create_compile(void) {
 		
 	}
 	
-	return compile_command;
-	
 }
 
-char* create_link(void) {
+void create_link(void) {
 	
-	char *link_command = bob_strcat("link ",bob_strcat(obj_path,"*.obj /ENTRY:mainCRTStartup"));
+	link_command = bob_strcat("link ",bob_strcat(obj_path,"*.obj /ENTRY:mainCRTStartup"));
 	
 	{ //Concatenate all libpaths
 		
@@ -399,8 +399,6 @@ char* create_link(void) {
 	
 	//Concat exe path
 	link_command = bob_strcat(link_command,bob_strcat(" /OUT:", exe_path));
-	
-	return link_command;
 	
 }
 
@@ -455,19 +453,28 @@ int main (int argc, char** argv) {
 	
 	get_src_diff();
 	
-	char *compile_command = create_compile();
-	char *link_command = create_link();
+	create_compile();
+	create_link();
 	
 	system(vcvarsall);
 	
 	printf("\n%sCompiling...\n\t%s\n\n", INFO_H, compile_command);
-	system(compile_command);
+	int comp_error = system(compile_command);
+	if(comp_error != 0) {
+		
+		printf("\n%sError compiling, aborting build...\n", ERROR_H);
+		bob_exit(3);
+		
+	}
 	
 	printf("\n%sLinking...\n\t%s\n\n", INFO_H, link_command);
-	system(link_command);
-	
-	free(compile_command);
-	free(link_command);
+	int link_error = system(link_command);
+	if(link_error != 0) {
+		
+		printf("\n%sError linking, aborting build...\n", ERROR_H);
+		bob_exit(4);
+		
+	}
 	
 	bob_exit(0);
 	
@@ -580,6 +587,11 @@ void bob_exit(int exitcode) {
 		lfree(prev_sources);
 	if(prev_hashes)
 		lfree(prev_hashes);
+	
+	if(compile_command)
+		free(compile_command);
+	if(link_command)
+		free(link_command);
 	
 	system("PAUSE");
 	exit(exitcode);
