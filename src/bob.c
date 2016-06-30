@@ -1,15 +1,11 @@
 #include "bob.h"
 
-/*
-Warning, this code needs to be broken into smaller pieces, leave that for a future commit.
-*/
-
 //bob.exe exitcodes
 //0 - success
 //1 - file error
 //2 - argument error
 
-int main (int argc, char** argv) {
+void parse_args(int argc, char** argv) {
 	
 	for (int i = 1; i< argc; i++) {
 		unsigned long arghash = hash(*(argv+i));
@@ -97,8 +93,9 @@ int main (int argc, char** argv) {
 		}
 	}
 	
-	if(dmode == 2)
-		printf("%sbob v%u\n", INFO_H, VERSION);
+}
+
+void parse_conf(void) {
 	
 	if(conf_fle == NULL){
 		printf("%sNull configuration file!\n", ERROR_H);
@@ -109,12 +106,6 @@ int main (int argc, char** argv) {
 		printf("%sCan't open build configuration file!\n", ERROR_H);
 		bob_exit(1);
 	}
-	
-	inc_paths = lnew();
-	lib_paths = lnew();
-	libs      = lnew();
-	
-	//Parse config file
 	
 	if(dmode == 2)
 		printf("-[CONFIG FILE BEGIN]-\n");
@@ -223,35 +214,22 @@ int main (int argc, char** argv) {
 	if(dmode == 2)
 		printf("Comments:    %u\nBlank lines: %u\n--[CONFIG FILE END]--\n", comments, blanks);
 	
-	if( main_src == NULL ||
-	    src_path == NULL ||
-		inc_paths->size == 0 ||
-		exe_path == NULL ||
-		obj_path == NULL) {
+}
 
-		printf("%sVariable not set in build config file!.\n", ERROR_H);
-		bob_exit(1);
-		
-	}
+bool missing_var(void) {
 	
-	struct _stat buf;
-	if(_stat(src_path,&buf) == 0) { //Exists
-		if (buf.st_mode & _S_IFDIR) {
-			if(dmode == 2)
-				printf("%s'%s' found.\n", INFO_H, src_path);
-		} else {
-			printf("%s'%s' is not a directory.\n", ERROR_H, src_path);
-			bob_exit(1);
-		}
-	} else {
-		printf("%s'%s' not found.\n", ERROR_H, src_path);
-		bob_exit(1);
-	}
+	return  main_src == NULL ||
+	        src_path == NULL ||
+		    inc_paths->size == 0 ||
+		    exe_path == NULL ||
+			obj_path == NULL;
 	
-	prev_sources = lnew();
-	prev_hashes = lnew();
+}
+
+void parse_chfile(void) {
 	
 	//Read file change file if exists and full build is false
+	struct _stat buf;
 	if(_stat(ch_file,&buf) == 0 && !fullbuild) {
 		if(dmode == 2)
 			printf("%sChange file exists!\n", INFO_H);
@@ -264,6 +242,7 @@ int main (int argc, char** argv) {
 			printf("%sCan't open change file!\n", ERROR_H);
 			bob_exit(1);
 		}
+		char line[1024];
 		while(fgets(line, sizeof line, chfile) != NULL) {
 			char *filename = strtok(line,SEPARATOR);
 			char *unconvhash = strtok(NULL,SEPARATOR);
@@ -289,8 +268,9 @@ int main (int argc, char** argv) {
 		}
 	}
 	
-	sources = bob_sources(src_path);
-	hashes = lnew();
+}
+
+void create_chfile(void) {
 	
 	//Creating this builds change file.
 	node_t *cur = sources->head;
@@ -338,20 +318,26 @@ int main (int argc, char** argv) {
 		
 	}
 	
-	{ //Compare previous source hashes and current hashes
-		node_t *cur = sources->head;
-		for(int i = 0; i < sources->size; i++){
-			int index = lhas(prev_sources,cur->value);
-			if(index != -1){
-				node_t *prevh = lgetat(prev_hashes,index);
-				node_t *curh = lgetat(hashes,i);
-				if(ncmp(prevh,curh) && strcmp(bob_strcat(src_path,bob_strcat("\\",cur->value->value._str)),main_src) != 0){
-					cur->value->value._str = NULL;
-				}
+}
+
+void get_src_diff(void) {
+	
+	node_t *cur = sources->head;
+	for(int i = 0; i < sources->size; i++){
+		int index = lhas(prev_sources,cur->value);
+		if(index != -1){
+			node_t *prevh = lgetat(prev_hashes,index);
+			node_t *curh = lgetat(hashes,i);
+			if(ncmp(prevh,curh) && strcmp(bob_strcat(src_path,bob_strcat("\\",cur->value->value._str)),main_src) != 0){
+				cur->value->value._str = NULL;
 			}
-			cur = cur->next;
 		}
+		cur = cur->next;
 	}
+	
+}
+
+char* create_compile(void) {
 	
 	char *compile_command = "cl /c ";
 	//Concat additional parameters
@@ -385,6 +371,12 @@ int main (int argc, char** argv) {
 		
 	}
 	
+	return compile_command;
+	
+}
+
+char* create_link(void) {
+	
 	char *link_command = bob_strcat("link ",bob_strcat(obj_path,"*.obj /ENTRY:mainCRTStartup"));
 	
 	{ //Concatenate all libpaths
@@ -408,6 +400,64 @@ int main (int argc, char** argv) {
 	//Concat exe path
 	link_command = bob_strcat(link_command,bob_strcat(" /OUT:", exe_path));
 	
+	return link_command;
+	
+}
+
+int main (int argc, char** argv) {
+	
+	//TODO: add this remove VCVARSALL keyword
+	//printf("VCINSTALLDIR: %s\n", getenv("VCINSTALLDIR")); <- NULL if not exists
+	
+	parse_args(argc,argv);
+	
+	if(dmode == 2)
+		printf("%sbob v%u\n", INFO_H, VERSION);
+	
+	inc_paths = lnew();
+	lib_paths = lnew();
+	libs      = lnew();
+	
+	parse_conf();
+	
+	if(missing_var()) {
+
+		printf("%sVariable not set in build config file!.\n", ERROR_H);
+		bob_exit(1);
+		
+	}
+	
+	//TODO: remove this????
+	//Check if source dir exists
+	struct _stat buf;
+	if(_stat(src_path,&buf) == 0) { //Exists
+		if (buf.st_mode & _S_IFDIR) {
+			if(dmode == 2)
+				printf("%s'%s' found.\n", INFO_H, src_path);
+		} else {
+			printf("%s'%s' is not a directory.\n", ERROR_H, src_path);
+			bob_exit(1);
+		}
+	} else {
+		printf("%s'%s' not found.\n", ERROR_H, src_path);
+		bob_exit(1);
+	}
+	
+	prev_sources = lnew();
+	prev_hashes = lnew();
+	
+	parse_chfile();
+	
+	sources = bob_sources(src_path);
+	hashes = lnew();
+	
+	create_chfile();
+	
+	get_src_diff();
+	
+	char *compile_command = create_compile();
+	char *link_command = create_link();
+	
 	system(vcvarsall);
 	
 	printf("\n%sCompiling...\n\t%s\n\n", INFO_H, compile_command);
@@ -417,6 +467,7 @@ int main (int argc, char** argv) {
 	system(link_command);
 	
 	free(compile_command);
+	free(link_command);
 	
 	bob_exit(0);
 	

@@ -7,9 +7,12 @@
 #define ARG_C     5861493   //config file, if not present "config.b" will be used
 #define ARG_F     5861496   //full rebuild ignore change file
 #define ARG_D     5861494   //debug mode, if not present DM_NONE will be used
-	#define _DM_NONE    2090551285 //print no debug messages
-	#define _DM_MEDIUM  226336838  //print some debug messages
-	#define _DM_ALL     193486302  //print all debug messages - verbose!
+
+//Debug Modes
+#define _DM_NONE    2090551285 //print no debug messages
+#define _DM_MEDIUM  226336838  //print some debug messages
+#define _DM_ALL     193486302  //print all debug messages - verbose!
+
 //Build File keywords
 #define VCVARSALL 1657761011 //Path to vcvarsall.bat file
 #define SRC_PATH  1616936121 //Path to folder containing all the source files
@@ -66,6 +69,15 @@ list_t *sources;
 list_t *hashes;
 list_t *prev_sources;
 list_t *prev_hashes;
+
+void parse_args(int argc, char** argv);
+void parse_conf(void);
+bool missing_var(void);
+void parse_chfile(void);
+void create_chfile(void);
+void get_src_diff(void);
+char* create_compile(void);
+char* create_link(void);
 
 list_t* bob_sources(const char *path);
 char* bob_strcat(const char *str1, const char *str2);
