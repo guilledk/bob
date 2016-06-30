@@ -27,9 +27,14 @@ OBJ_PATH|bin\obj\
 
 #Compiled executable output path
 EXE_PATH|bin\bob.exe
+
+#vcvarsall.bat file location, this is not required but its recommended
+VCVARSALL|"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
 ```
-  
+You must have either Visual Studio or [Visual C++ Build Tools](https://blogs.msdn.microsoft.com/vcblog/2016/03/31/announcing-the-official-release-of-the-visual-c-build-tools-2015/)(Recommended).
+
 For all the info about config file syntax and command parameters bob accepts look in the wiki.
+
   
 ###Download
 
