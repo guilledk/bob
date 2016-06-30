@@ -3,8 +3,8 @@
 
 //Arguments
 #define DEBUG_ARGS false
-#define ARG_CH    193429373 //change file, if not present "bbuild.cf" will be used
-#define ARG_C     5861493   //config file, if not present "buildcfg.bf" will be used
+#define ARG_CH    193429373 //change file, if not present "build.cf" will be used
+#define ARG_C     5861493   //config file, if not present "config.b" will be used
 #define ARG_F     5861496   //full rebuild ignore change file
 #define ARG_D     5861494   //debug mode, if not present DM_NONE will be used
 	#define _DM_NONE    2090551285 //print no debug messages

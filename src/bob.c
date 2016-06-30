@@ -1,5 +1,9 @@
 #include "bob.h"
 
+/*
+Warning, this code needs to be broken into smaller pieces, leave that for a future commit.
+*/
+
 //bob.exe exitcodes
 //0 - success
 //1 - file error
