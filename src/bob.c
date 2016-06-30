@@ -7,8 +7,6 @@
 
 int main (int argc, char** argv) {
 	
-	printf("bob v%u\n", VERSION);
-	
 	for (int i = 1; i< argc; i++) {
 		unsigned long arghash = hash(*(argv+i));
 		switch(arghash) {
@@ -18,11 +16,12 @@ int main (int argc, char** argv) {
 			i++;
 			ch_file = *(argv+i);
 			if(ch_file == NULL || ch_file[0] == '\0') {
-				printf("Wrong argument to option '-ch'\n");
+				printf("%sWrong argument to option '-ch'\n", ERROR_H);
 				bob_exit(2);
 			}
-				
-			printf("Using change file: '%s'\n", ch_file);
+			
+			if(DEBUG_ARGS)
+				printf("%sUsing change file: '%s'\n", DEBUG_H, ch_file);
 			break;
 		
 		}
@@ -31,10 +30,11 @@ int main (int argc, char** argv) {
 			i++;
 			conf_fle = *(argv+i);
 			if(conf_fle == NULL || conf_fle[0] == '\0') {
-				printf("Wrong argument to option '-c'\n");
+				printf("%sWrong argument to option '-c'\n", ERROR_H);
 				bob_exit(2);
 			}
-			printf("Using build file: '%s'\n", conf_fle);
+			if(DEBUG_ARGS)
+				printf("%sUsing build file: '%s'\n", DEBUG_H, conf_fle);
 			break;
 		
 		}
@@ -43,28 +43,31 @@ int main (int argc, char** argv) {
 			i++;
 			char *debug_mode_str = *(argv+i);
 			if(debug_mode_str == NULL || debug_mode_str[0] == '\0') {
-				printf("Wrong argument to option '-d'\n");
+				printf("%sWrong argument to option '-d'\n", ERROR_H);
 				bob_exit(2);
 			}
 			switch(hash(debug_mode_str)) {
 			
 			case _DM_ALL    : {
 				dmode = DM_ALL;
-				printf("Debug mode: ALL\n");
+				if(DEBUG_ARGS)
+					printf("%sDebug mode: ALL\n", DEBUG_H);
 				break;
 			}
 			case _DM_MEDIUM : {
 				dmode = DM_MEDIUM;
-				printf("Debug mode: MEDIUM\n");
+				if(DEBUG_ARGS)
+					printf("%sDebug mode: MEDIUM\n", DEBUG_H);
 				break;
 			}
 			case _DM_NONE   : {
 				dmode = DM_NONE;
-				printf("Debug mode: NONE\n");
+				if(DEBUG_ARGS)
+					printf("%sDebug mode: NONE\n", DEBUG_H);
 				break;
 			}
 			default         : {
-				printf("Debug mode: '%s' not recognized!\n", debug_mode_str);
+				printf("%sDebug mode: '%s' not recognized!\n", ERROR_H, debug_mode_str);
 				bob_exit(2);
 				break;
 			}
@@ -73,8 +76,16 @@ int main (int argc, char** argv) {
 			break;
 			
 		}
+		case ARG_F  : {
+			
+			fullbuild = true;
+			if(DEBUG_ARGS)
+				printf("%sFull build, ignoring change file!\n", DEBUG_H);
+			break;
+			
+		}
 		default     : {
-			printf("Can't parse argument: %s\nhash: %lu\n", *(argv+i), arghash);
+			printf("%sCan't parse argument: %s\nhash: %lu\n", ERROR_H, *(argv+i), arghash);
 			bob_exit(2);
 			break;
 		}
@@ -82,13 +93,16 @@ int main (int argc, char** argv) {
 		}
 	}
 	
+	if(dmode == 2)
+		printf("%sbob v%u\n", INFO_H, VERSION);
+	
 	if(conf_fle == NULL){
-		printf("Null configuration file!\n");
+		printf("%sNull configuration file!\n", ERROR_H);
 		bob_exit(1);
 	}
 	config = fopen(conf_fle,"r");
 	if(config == NULL){
-		printf("Can't open build configuration file!\n");
+		printf("%sCan't open build configuration file!\n", ERROR_H);
 		bob_exit(1);
 	}
 	
@@ -97,7 +111,9 @@ int main (int argc, char** argv) {
 	libs      = lnew();
 	
 	//Parse config file
-	printf("-CONFIG FILE BEGIN-\n");
+	
+	if(dmode == 2)
+		printf("-[CONFIG FILE BEGIN]-\n");
 	unsigned short comments = 0;
 	unsigned short blanks   = 0;
 	char line[1024];
@@ -119,20 +135,23 @@ int main (int argc, char** argv) {
 		case AD_PARAM  : {
 			ad_param = (char*)malloc(strlen(tmp));
 			strcpy(ad_param,tmp);
-			printf("Additional parameters: %s\n", ad_param);
+			if(dmode == 2)
+				printf("Additional parameters: %s\n", ad_param);
 			break;
 		}
 		
 		case SRC_PATH  : {
 			src_path = (char*)malloc(strlen(tmp));
 			strcpy(src_path,tmp);
-			printf("Source path:           %s\n", src_path);
+			if(dmode == 2)
+				printf("Source path:           %s\n", src_path);
 			break;
 		}
 		case MAIN_SRC  : {
 			main_src = (char*)malloc(strlen(tmp));
 			strcpy(main_src,tmp);
-			printf("Main source:           %s\n", main_src);
+			if(dmode == 2)
+				printf("Main source:           %s\n", main_src);
 			break;
 		}
 		case INC_PATH  : {
@@ -142,19 +161,22 @@ int main (int argc, char** argv) {
 			strcpy(inc_path._str,tmp);
 			
 			ladd(inc_paths,gvtnew(inc_path,T_STR));
-			printf("Include path:          %s\n", tmp);
+			if(dmode == 2)
+				printf("Include path:          %s\n", tmp);
 			break;
 		}
 		case EXE_PATH  : {
 			exe_path = (char*)malloc(strlen(tmp));
 			strcpy(exe_path,tmp);
-			printf("Executable path:       %s\n", exe_path);
+			if(dmode == 2)
+				printf("Executable path:       %s\n", exe_path);
 			break;
 		}
 		case OBJ_PATH  : {
 			obj_path = (char*)malloc(strlen(tmp));
 			strcpy(obj_path,tmp);
-			printf("Object path:           %s\n", obj_path);
+			if(dmode == 2)
+				printf("Object path:           %s\n", obj_path);
 			break;
 		}
 		case LIB_PATH  : {
@@ -164,7 +186,8 @@ int main (int argc, char** argv) {
 			strcpy(lib_path._str,tmp);
 			
 			ladd(lib_paths,gvtnew(lib_path,T_STR));
-			printf("Library path:          %s\n", tmp);
+			if(dmode == 2)
+				printf("Library path:          %s\n", tmp);
 			break;
 		}
 		case LIB       : {
@@ -174,23 +197,27 @@ int main (int argc, char** argv) {
 			strcpy(lib._str,tmp);
 			
 			ladd(libs,gvtnew(lib,T_STR));
-			printf("Library:               %s\n", tmp);
+			if(dmode == 2)
+				printf("Library:               %s\n", tmp);
 			break;
 		}
 		case VCVARSALL : {
 			vcvarsall = (char*)malloc(strlen(tmp));
 			strcpy(vcvarsall,tmp);
-			printf("vcvarsall:             %s\n", tmp);
+			if(dmode == 2)
+				printf("vcvarsall:             %s\n", tmp);
 			break;
 		}
 		default : {
-			printf("Syntax error, hash:    %u\n", hash(sline));
+			if(dmode >= 1)
+				printf("%sSyntax error, hash: '%u'\n", WARN_H, hash(sline));
 			break;
 		}
 			
 		}
 	}
-	printf("--CONFIG FILE END--\nComments:    %u\nBlank lines: %u\n", comments, blanks);
+	if(dmode == 2)
+		printf("Comments:    %u\nBlank lines: %u\n--[CONFIG FILE END]--\n", comments, blanks);
 	
 	if( main_src == NULL ||
 	    src_path == NULL ||
@@ -198,7 +225,7 @@ int main (int argc, char** argv) {
 		exe_path == NULL ||
 		obj_path == NULL) {
 
-		printf("VARIABLE NOT SET IN BUILD FILE!.\n");
+		printf("%sVariable not set in build config file!.\n", ERROR_H);
 		bob_exit(1);
 		
 	}
@@ -206,29 +233,31 @@ int main (int argc, char** argv) {
 	struct _stat buf;
 	if(_stat(src_path,&buf) == 0) { //Exists
 		if (buf.st_mode & _S_IFDIR) {
-			printf("'%s' found.\n", src_path);
+			if(dmode == 2)
+				printf("%s'%s' found.\n", INFO_H, src_path);
 		} else {
-			printf("'%s' is not a directory.\n", src_path);
+			printf("%s'%s' is not a directory.\n", ERROR_H, src_path);
 			bob_exit(1);
 		}
 	} else {
-		printf("'%s' not found.\n", src_path);
+		printf("%s'%s' not found.\n", ERROR_H, src_path);
 		bob_exit(1);
 	}
 	
 	prev_sources = lnew();
 	prev_hashes = lnew();
 	
-	//READ CHANGE FILE IF IT EXISTS
-	if(_stat(ch_file,&buf) == 0) {
-		printf("Change file exists!\n");
+	//Read file change file if exists and full build is false
+	if(_stat(ch_file,&buf) == 0 && !fullbuild) {
+		if(dmode == 2)
+			printf("%sChange file exists!\n", INFO_H);
 		if(ch_file == NULL){
-			printf("Null change file!\n");
+			printf("%sNull change file!\n", ERROR_H);
 			bob_exit(1);
 		}
 		FILE *chfile = fopen(ch_file,"r");
 		if(chfile == NULL){
-			printf("Can't open change file!\n");
+			printf("%sCan't open change file!\n", ERROR_H);
 			bob_exit(1);
 		}
 		while(fgets(line, sizeof line, chfile) != NULL) {
@@ -247,11 +276,13 @@ int main (int argc, char** argv) {
 			
 		}
 		fclose(chfile);
-		printf("Change file contents:\n");
-		printf("Prev files:  ");
-		lprint(prev_sources);
-		printf("Prev hashes: ");
-		lprint(prev_hashes);
+		if(dmode == 2) {
+			printf("%sChange file contents:\n", INFO_H);
+			printf("Prev files:  ");
+			lprint(prev_sources);
+			printf("Prev hashes: ");
+			lprint(prev_hashes);
+		}
 	}
 	
 	sources = bob_sources(src_path);
@@ -267,30 +298,39 @@ int main (int argc, char** argv) {
 		cur = cur->next;
 		free(fullpath);
 	}
-	//TODO print this only if debug on
-	printf("Files:  ");
-	lprint(sources);
-	printf("Hashes: ");
-	lprint(hashes);
+	
+	if(dmode == 2) {
+		printf("%sCurrent build stats:\n", INFO_H);
+		printf("Files:  ");
+		lprint(sources);
+		printf("Hashes: ");
+		lprint(hashes);
+	}
 	
 	{ //Write new change file
 		
 		FILE *chfile = fopen(ch_file,"w");
 		if(chfile == NULL){
-			printf("Can't open change file!\n");
+			printf("%sCan't open change file!\n", ERROR_H);
 			bob_exit(1);
 		}
 		node_t *curs = sources->head;
 		node_t *curh = hashes->head;
-		printf("-NEW CHANGE FILE BEGIN-\n");
+		
+		if(dmode == 2)
+			printf("-[NEW CHANGE FILE BEGIN]-\n");
+		
 		for(int i = 0; i < sources->size; i++){
-			printf("%s%s%lu\n", curs->value->value._str, SEPARATOR, curh->value->value._ulong);
+			if(dmode == 2)
+				printf("%s%s%lu\n", curs->value->value._str, SEPARATOR, curh->value->value._ulong);
 			fprintf(chfile, "%s%s%lu\n", curs->value->value._str, SEPARATOR, curh->value->value._ulong);
 			curs = curs->next;
 			curh = curh->next;
 		}
 		fclose(chfile);
-		printf("--NEW CHANGE FILE END--\n");
+		
+		if(dmode == 2)
+			printf("--[NEW CHANGE FILE END]--\n");
 		
 	}
 	
@@ -319,7 +359,6 @@ int main (int argc, char** argv) {
 		
 		node_t *cur = sources->head;
 		for(int i = 0; i < sources->size; i++){
-			printf("%s\n", cur->value->value._str);
 			if(!cur->value->value._str)
 				continue;
 			
@@ -365,11 +404,12 @@ int main (int argc, char** argv) {
 	//Concat exe path
 	link_command = bob_strcat(link_command,bob_strcat(" /OUT:", exe_path));
 	
-	printf("\nCompiler command:\n\t%s\n\n", compile_command);
-	printf("Linker command:\n\t%s\n\n", link_command);
-	
 	system(vcvarsall);
+	
+	printf("\n%sCompiling...\n\t%s\n\n", INFO_H, compile_command);
 	system(compile_command);
+	
+	printf("\n%sLinking...\n\t%s\n\n", INFO_H, link_command);
 	system(link_command);
 	
 	free(compile_command);
@@ -428,17 +468,21 @@ unsigned long bob_hashfile(const char *path) {
 	
 	FILE *fileptr = fopen(path,"r");
 	if(!fileptr){
-		printf("Error getting file hash! %s\n", path);
+		if(dmode >= 1)
+			printf("%sError getting file hash! %s\n", WARN_H, path);
 		return 0;
 	}
 	if(fseek(fileptr,0,SEEK_END)) {
-		printf("fseek Error! %s\n", path);
+		if(dmode >= 1)
+			printf("%sfseek Error! %s\n", WARN_H, path);
 		return 0;
 	}
 	long fsize = ftell(fileptr);
-	printf("Hashing file of size: %ld\n", fsize);
+	if(dmode == 2)
+		printf("%sHashing file of size: %ld\n", INFO_H, fsize);
 	if(fseek(fileptr,0,SEEK_SET)) {
-		printf("fseek Error! %s\n", path);
+		if(dmode >= 1)
+			printf("%sfseek Error! %s\n", WARN_H, path);
 		return 0;
 	}
 	

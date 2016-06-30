@@ -2,8 +2,10 @@
 #define _BOB_H_
 
 //Arguments
+#define DEBUG_ARGS false
 #define ARG_CH    193429373 //change file, if not present "bbuild.cf" will be used
 #define ARG_C     5861493   //config file, if not present "buildcfg.bf" will be used
+#define ARG_F     5861496   //full rebuild ignore change file
 #define ARG_D     5861494   //debug mode, if not present DM_NONE will be used
 	#define _DM_NONE    2090551285 //print no debug messages
 	#define _DM_MEDIUM  226336838  //print some debug messages
@@ -36,11 +38,18 @@ typedef enum {
 	
 } debugmode;
 
-const unsigned short VERSION              = 2;
+const unsigned short VERSION              = 3;
 const char          *SOURCE_EXTENSIONS[3] = { ".c", ".cc", ".cpp" };
 const char          *SEPARATOR            = "|";
+//Message headers
+const char          *INFO_H               = "[Info]: ";
+const char          *DEBUG_H              = "[Debug]: ";
+const char          *WARN_H               = "[Warning]: ";
+const char          *ERROR_H              = "[Error]: ";
 
-debugmode dmode = DM_NONE;
+
+bool fullbuild  = false;
+debugmode dmode = DM_MEDIUM;
 char *ch_file   = "build.cf"; //bob build . change file
 char *conf_fle  = "config.b";
 char *ad_param  = NULL;
