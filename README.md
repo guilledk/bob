@@ -50,7 +50,7 @@ at the top of the repo.
 
 ###License
 
-GNU GPL v2
+MIT
 
 ###Contributing
 
