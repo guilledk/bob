@@ -57,12 +57,12 @@ char *ch_file   = "build.cf"; //bob build . change file
 char *conf_fle  = "config.b";
 char *ad_param  = NULL;
 char *main_src  = NULL;
-char *src_path  = NULL;
 char *exe_path  = NULL;
 char *obj_path  = NULL;
 char *vcvarsall = NULL;
 char *compile_command = NULL;
 char *link_command = NULL;
+list_t *src_paths;
 list_t *inc_paths;
 list_t *lib_paths;
 list_t *libs;
@@ -81,7 +81,7 @@ void get_src_diff(void);
 void create_compile(void);
 void create_link(void);
 
-list_t* bob_sources(const char *path);
+list_t* bob_sources(list_t *src_paths);
 char* bob_strcat(const char *str1, const char *str2);
 unsigned long bob_hashfile(const char *path);
 void bob_exit(int exitcode);

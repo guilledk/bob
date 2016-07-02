@@ -1,4 +1,4 @@
-#Source Path
+#Source Paths
 SRC_PATH|src
 
 #Entry point

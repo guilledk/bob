@@ -138,10 +138,13 @@ void parse_conf(void) {
 		}
 		
 		case SRC_PATH  : {
-			src_path = (char*)malloc(strlen(tmp));
-			strcpy(src_path,tmp);
+			gvalue src_path;
+			src_path._str = (char*)malloc(strlen(tmp));
+			strcpy(src_path._str,tmp);
+			
+			ladd(src_paths,gvtnew(src_path,T_STR));
 			if(dmode == 2)
-				printf("Source path:           %s\n", src_path);
+				printf("Source path:          %s\n", tmp);
 			break;
 		}
 		case MAIN_SRC  : {
@@ -221,7 +224,7 @@ void parse_conf(void) {
 bool missing_var(void) {
 	
 	return  main_src == NULL ||
-	        src_path == NULL ||
+	        src_paths->size == 0 ||
 		    inc_paths->size == 0 ||
 		    exe_path == NULL ||
 			obj_path == NULL;
@@ -278,11 +281,9 @@ void create_chfile(void) {
 	node_t *cur = sources->head;
 	for(int i = 0; i < sources->size; i++){
 		gvalue src_hash;
-		char *fullpath = bob_strcat(src_path,"\\");
-		src_hash._ulong = bob_hashfile(bob_strcat(fullpath,cur->value->value._str));
+		src_hash._ulong = bob_hashfile(cur->value->value._str);
 		ladd(hashes,gvtnew(src_hash,T_ULONG));
 		cur = cur->next;
-		free(fullpath);
 	}
 	
 	if(dmode == 2) {
@@ -330,7 +331,7 @@ void get_src_diff(void) {
 		if(index != -1){
 			node_t *prevh = lgetat(prev_hashes,index);
 			node_t *curh = lgetat(hashes,i);
-			if(ncmp(prevh,curh) && strcmp(bob_strcat(src_path,bob_strcat("\\",cur->value->value._str)),main_src) != 0){
+			if(ncmp(prevh,curh) && strcmp(cur->value->value._str,main_src) != 0){
 				cur->value->value._str = NULL;
 			}
 		}
@@ -354,7 +355,7 @@ void create_compile(void) {
 			if(!cur->value->value._str)
 				continue;
 			
-			compile_command = bob_strcat(compile_command, bob_strcat(src_path,bob_strcat("\\",bob_strcat(cur->value->value._str," "))));
+			compile_command = bob_strcat(compile_command, bob_strcat(cur->value->value._str," "));
 			cur = cur->next;
 		}
 		
@@ -412,6 +413,7 @@ int main (int argc, char** argv) {
 	if(dmode == 2)
 		printf("%sbob v%u\n", INFO_H, VERSION);
 	
+	src_paths = lnew();
 	inc_paths = lnew();
 	lib_paths = lnew();
 	libs      = lnew();
@@ -425,28 +427,12 @@ int main (int argc, char** argv) {
 		
 	}
 	
-	//TODO: remove this????
-	//Check if source dir exists
-	struct _stat buf;
-	if(_stat(src_path,&buf) == 0) { //Exists
-		if (buf.st_mode & _S_IFDIR) {
-			if(dmode == 2)
-				printf("%s'%s' found.\n", INFO_H, src_path);
-		} else {
-			printf("%s'%s' is not a directory.\n", ERROR_H, src_path);
-			bob_exit(1);
-		}
-	} else {
-		printf("%s'%s' not found.\n", ERROR_H, src_path);
-		bob_exit(1);
-	}
-	
 	prev_sources = lnew();
 	prev_hashes = lnew();
 	
 	parse_chfile();
 	
-	sources = bob_sources(src_path);
+	sources = bob_sources(src_paths);
 	hashes = lnew();
 	
 	create_chfile();
@@ -480,34 +466,40 @@ int main (int argc, char** argv) {
 	
 }
 
-list_t* bob_sources(const char *path) {
+list_t* bob_sources(list_t *src_paths) {
 	
-	DIR *dp;
-	struct dirent *ep;
 	list_t *src_list = lnew();
 	
-	dp = opendir(path);
-	if (dp == NULL)
-		return NULL;
+	node_t *cur = src_paths->head;
+	for (int i = 0; i < src_paths->size; i++) {
 	
-	while (ep = readdir(dp)) {
-		bool is_src = false;
-		for(int i = 0; i < 3; i++){
+		DIR *dp;
+		struct dirent *ep;
+		
+		dp = opendir(cur->value->value._str);
+		if (dp == NULL)
+			return NULL;
+		
+		while (ep = readdir(dp)) {
+			bool is_src = false;
 			char *ext = strrchr(ep->d_name,'.');
-			if(ext && strcmp(ext,SOURCE_EXTENSIONS[i]) == 0){
-				is_src = true;
-				break;
+			for(int i = 0; i < 3; i++){
+				if(ext && strcmp(ext,SOURCE_EXTENSIONS[i]) == 0){
+					is_src = true;
+					break;
+				}
+			}
+			if(is_src) {
+				gvalue src;
+				src._str = bob_strcat(cur->value->value._str, bob_strcat("\\",ep->d_name));
+				ladd(src_list,gvtnew(src,T_STR));
 			}
 		}
-		if(is_src) {
-			gvalue filename;
-			filename._str = (char*)malloc(strlen(ep->d_name));
-			strcpy(filename._str,ep->d_name);
-			ladd(src_list,gvtnew(filename,T_STR));
-		}
+			
+		closedir(dp);
+		cur = cur->next;
+	
 	}
-		
-	closedir(dp);
 	
 	return src_list;
 	
@@ -566,13 +558,13 @@ void bob_exit(int exitcode) {
 		free(ad_param);
 	if(main_src)
 		free(main_src);
-	if(src_path)
-		free(src_path);
 	if(exe_path)
 		free(exe_path);
 	if(obj_path)
 		free(obj_path);
 	
+	if(src_paths)
+		lfree(src_paths);
 	if(inc_paths)
 		lfree(inc_paths);
 	if(lib_paths)
