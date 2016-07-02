@@ -13,7 +13,7 @@ Example build config file:
 ```
 #Comments start with '#'
 #'|' is the separator
-#Source directory path
+#Source directory path, more than one can be set
 SRC_PATH|src
 
 #Source file containing main()
