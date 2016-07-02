@@ -405,9 +405,6 @@ void create_link(void) {
 
 int main (int argc, char** argv) {
 	
-	//TODO: add this remove VCVARSALL keyword
-	//printf("VCINSTALLDIR: %s\n", getenv("VCINSTALLDIR")); <- NULL if not exists
-	
 	parse_args(argc,argv);
 	
 	if(dmode == 2)
@@ -419,6 +416,17 @@ int main (int argc, char** argv) {
 	libs      = lnew();
 	
 	parse_conf();
+	
+	//If vcvars not set in config try to get it from env variable.
+	if(!vcvarsall) {
+		char *vcinstalldir = getenv("VCINSTALLDIR");
+		if(vcinstalldir) {
+			vcvarsall = bob_strcat(bob_strcat("\"",vcinstalldir), "vcvarsall.bat\"");
+		} else {
+			if(dmode >= 1)
+				printf("%sVCWARSALL not set, execution will continue but commands may fail.\n", WARN_H);
+		}
+	}
 	
 	if(missing_var()) {
 
