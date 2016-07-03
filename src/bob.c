@@ -132,7 +132,7 @@ void parse_conf(void) {
 		switch(hash(sline)) {
 		
 		case AD_PARAM  : {
-			ad_param = (char*)malloc(strlen(tmp));
+			ad_param = (char*)malloc(strlen(tmp) + 1);
 			strcpy(ad_param,tmp);
 			if(dmode == 2)
 				printf("Additional parameters: %s\n", ad_param);
@@ -152,7 +152,7 @@ void parse_conf(void) {
 				h_tmp == _SS_EFI_ROM  ||
 				h_tmp == _SS_EFI_RUND ) {
 				
-				subsys = (char*)malloc(strlen(tmp));
+				subsys = malloc(strlen(tmp) + 1);
 				strcpy(subsys,tmp);
 				if(dmode == 2)
 					printf("Subsystem:         %s\n", subsys);
@@ -166,16 +166,16 @@ void parse_conf(void) {
 		
 		case SRC_PATH  : {
 			gvalue src_path;
-			src_path._str = (char*)malloc(strlen(tmp));
+			src_path._str = (char*)malloc(strlen(tmp) + 1);
 			strcpy(src_path._str,tmp);
 			
 			ladd(src_paths,gvtnew(src_path,T_STR));
 			if(dmode == 2)
-				printf("Source path:          %s\n", tmp);
+				printf("Source path:           %s\n", tmp);
 			break;
 		}
 		case MAIN_SRC  : {
-			main_src = (char*)malloc(strlen(tmp));
+			main_src = (char*)malloc(strlen(tmp) + 1);
 			strcpy(main_src,tmp);
 			if(dmode == 2)
 				printf("Main source:           %s\n", main_src);
@@ -184,7 +184,7 @@ void parse_conf(void) {
 		case INC_PATH  : {
 			
 			gvalue inc_path;
-			inc_path._str = (char*)malloc(strlen(tmp));
+			inc_path._str = (char*)malloc(strlen(tmp) + 1);
 			strcpy(inc_path._str,tmp);
 			
 			ladd(inc_paths,gvtnew(inc_path,T_STR));
@@ -193,14 +193,14 @@ void parse_conf(void) {
 			break;
 		}
 		case EXE_PATH  : {
-			exe_path = (char*)malloc(strlen(tmp));
+			exe_path = (char*)malloc(strlen(tmp) + 1);
 			strcpy(exe_path,tmp);
 			if(dmode == 2)
 				printf("Executable path:       %s\n", exe_path);
 			break;
 		}
 		case OBJ_PATH  : {
-			obj_path = (char*)malloc(strlen(tmp));
+			obj_path = (char*)malloc(strlen(tmp) + 1);
 			strcpy(obj_path,tmp);
 			if(dmode == 2)
 				printf("Object path:           %s\n", obj_path);
@@ -209,7 +209,7 @@ void parse_conf(void) {
 		case LIB_PATH  : {
 			
 			gvalue lib_path;
-			lib_path._str = (char*)malloc(strlen(tmp));
+			lib_path._str = (char*)malloc(strlen(tmp) + 1);
 			strcpy(lib_path._str,tmp);
 			
 			ladd(lib_paths,gvtnew(lib_path,T_STR));
@@ -220,7 +220,7 @@ void parse_conf(void) {
 		case LIB       : {
 			
 			gvalue lib;
-			lib._str = (char*)malloc(strlen(tmp));
+			lib._str = (char*)malloc(strlen(tmp) + 1);
 			strcpy(lib._str,tmp);
 			
 			ladd(libs,gvtnew(lib,T_STR));
@@ -229,7 +229,7 @@ void parse_conf(void) {
 			break;
 		}
 		case VCVARSALL : {
-			vcvarsall = (char*)malloc(strlen(tmp));
+			vcvarsall = (char*)malloc(strlen(tmp) + 1);
 			strcpy(vcvarsall,tmp);
 			if(dmode == 2)
 				printf("vcvarsall:             %s\n", tmp);
@@ -281,7 +281,7 @@ void parse_chfile(void) {
 			unsigned long filehash = strtoul(unconvhash, (char**)NULL, 10);
 			
 			gvalue filename_gv;
-			filename_gv._str = (char*)malloc(strlen(filename));
+			filename_gv._str = (char*)malloc(strlen(filename) + 1);
 			strcpy(filename_gv._str,filename);
 			ladd(prev_sources,gvtnew(filename_gv,T_STR));
 			
@@ -369,10 +369,12 @@ void get_src_diff(void) {
 
 void create_compile(void) {
 	
-	compile_command = "cl /c ";
+	compile_command = bob_strcat(vcvarsall," & cl /c ");
 	//Concat additional parameters
 	if(ad_param) {
-		compile_command = bob_strcat(compile_command,bob_strcat(ad_param," "));
+		char *spaced_param = bob_strcat(ad_param," ");
+		compile_command = bob_strcat(compile_command,spaced_param);
+		free(spaced_param);
 	}
 	
 	{ //Concatenate all the sources to the compile command
@@ -382,20 +384,26 @@ void create_compile(void) {
 			if(!cur->value->value._str)
 				continue;
 			
-			compile_command = bob_strcat(compile_command, bob_strcat(cur->value->value._str," "));
+			char *spaced_src = bob_strcat(cur->value->value._str," ");
+			compile_command = bob_strcat(compile_command, spaced_src);
+			free(spaced_src);
 			cur = cur->next;
 		}
 		
 	}
 
 	//Concat obj path
-	compile_command = bob_strcat(compile_command,bob_strcat("/Fo.\\", obj_path));
+	char *opath_arg = bob_strcat("/Fo.\\", obj_path);
+	compile_command = bob_strcat(compile_command,opath_arg);
+	free(opath_arg);
 	
 	{ //Concatenate all the include directorys to the compile command
 		
 		node_t *cur = inc_paths->head;
 		for(int i = 0; i < inc_paths->size; i++){
-			compile_command = bob_strcat(compile_command, bob_strcat(" /I.\\", cur->value->value._str));
+			char *include_arg = bob_strcat(" /I.\\", cur->value->value._str);
+			compile_command = bob_strcat(compile_command, include_arg);
+			free(include_arg);
 			cur = cur->next;
 		}
 		
@@ -405,8 +413,8 @@ void create_compile(void) {
 
 void create_link(void) {
 	
-	link_command = (char*)malloc(23 + strlen(subsys) + strlen(obj_path));
-	snprintf(link_command, 23 + strlen(subsys) + strlen(obj_path), "link /SUBSYSTEM:%s %s*.obj ", subsys, obj_path);
+	link_command = (char*)malloc(26 + strlen(vcvarsall) + strlen(subsys) + strlen(obj_path));
+	snprintf(link_command, 26 + strlen(vcvarsall) + strlen(subsys) + strlen(obj_path), "%s & link /SUBSYSTEM:%s %s*.obj ", vcvarsall, subsys, obj_path);
 	
 	{ //Concatenate all libpaths
 		
@@ -431,7 +439,9 @@ void create_link(void) {
 	}
 	
 	//Concat exe path
-	link_command = bob_strcat(link_command,bob_strcat(" /OUT:", exe_path));
+	char *extra_params = bob_strcat(" /DEBUG /OUT:", exe_path);
+	link_command = bob_strcat(link_command,extra_params);
+	free(extra_params);
 	
 }
 
@@ -458,9 +468,11 @@ int main (int argc, char** argv) {
 	
 	//If vcvars not set in config try to get it from env variable.
 	if(!vcvarsall) {
-		char *vcinstalldir = getenv("VCINSTALLDIR");
+		char *vcinstalldir = getenv("VS140COMNTOOLS");
 		if(vcinstalldir) {
-			vcvarsall = bob_strcat(bob_strcat("\"",vcinstalldir), "vcvarsall.bat\"");
+			char *quoted_vcdir = bob_strcat("\"",vcinstalldir);
+			vcvarsall = bob_strcat(quoted_vcdir, "..\\..\\VC\\vcvarsall.bat\" x86");
+			free(quoted_vcdir);
 		} else {
 			if(dmode >= 1)
 				printf("%sVCWARSALL not set, execution will continue but commands may fail.\n", WARN_H);
@@ -489,9 +501,8 @@ int main (int argc, char** argv) {
 	create_compile();
 	create_link();
 	
-	system(vcvarsall);
-	
-	printf("\n%sCompiling...\n\t%s\n\n", INFO_H, compile_command);
+	printf("\n%sCompiling...\n\t%s\n\n", INFO_H, compile_command+strlen(vcvarsall)+3);
+#ifndef MEMCHECK_BUILD
 	int comp_error = system(compile_command);
 	if(comp_error != 0) {
 		
@@ -499,8 +510,9 @@ int main (int argc, char** argv) {
 		bob_exit(3);
 		
 	}
-	
-	printf("\n%sLinking...\n\t%s\n\n", INFO_H, link_command);
+#endif
+	printf("\n%sLinking...\n\t%s\n\n", INFO_H, link_command+strlen(vcvarsall)+3);
+#ifndef MEMCHECK_BUILD
 	int link_error = system(link_command);
 	if(link_error != 0) {
 		
@@ -508,6 +520,7 @@ int main (int argc, char** argv) {
 		bob_exit(4);
 		
 	}
+#endif
 	
 	bob_exit(0);
 	
@@ -538,7 +551,9 @@ list_t* bob_sources(list_t *src_paths) {
 			}
 			if(is_src) {
 				gvalue src;
-				src._str = bob_strcat(cur->value->value._str, bob_strcat("\\",ep->d_name));
+				char *slashed_name = bob_strcat("\\",ep->d_name);
+				src._str = bob_strcat(cur->value->value._str, slashed_name);
+				free(slashed_name);
 				ladd(src_list,gvtnew(src,T_STR));
 			}
 		}
@@ -587,10 +602,10 @@ unsigned long bob_hashfile(const char *path) {
 		return 0;
 	}
 	
-	char *filecontent = (char*)malloc(fsize + 1);
+	char *filecontent = (char*)calloc(1,fsize + 1);
 	fread(filecontent, fsize, 1, fileptr);
 	fclose(fileptr);
-	filecontent[fsize] = 0;
+	filecontent[fsize] = '\0';
 	unsigned long fhash = hash(filecontent);
 	free(filecontent);
 	return fhash;

@@ -13,9 +13,11 @@ gvalue_t* gvtnew(gvalue value, char type) {
 
 void      gvtfree(gvalue_t *gvt) {
 	
-	if(gvt)
-		free(gvt);
-	
+	if(gvt){
+		if(gvt->type == T_STR)
+			free(gvt->value._str);
+		free(gvt);	
+	}
 }
 
 bool      gvtcmp(gvalue_t *a, gvalue_t *b) {

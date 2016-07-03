@@ -1,6 +1,8 @@
 #ifndef _BOB_H_
 #define _BOB_H_
 
+#define MEMCHECK_BUILD
+
 //Arguments
 #define DEBUG_ARGS false
 #define ARG_CH    193429373 //change file, if not present "build.cf" will be used
