@@ -114,7 +114,9 @@ void parse_conf(void) {
 	unsigned short comments = 0;
 	unsigned short blanks   = 0;
 	char line[1024];
+	unsigned short lines = 0;
 	while(fgets(line, sizeof line, config) != NULL) {
+		lines++;
 		if(line[0] == '\n') {
 			blanks++;
 			continue;
@@ -134,6 +136,31 @@ void parse_conf(void) {
 			strcpy(ad_param,tmp);
 			if(dmode == 2)
 				printf("Additional parameters: %s\n", ad_param);
+			break;
+		}
+		
+		case SUB_SYS  : {
+			
+			unsigned long h_tmp = hash(tmp);
+			if( h_tmp == _SS_BOOT     ||
+			    h_tmp == _SS_CONSOLE  ||
+				h_tmp == _SS_WINDOWS  ||
+				h_tmp == _SS_NATIVE   ||
+				h_tmp == _SS_POSIX    ||
+				h_tmp == _SS_EFI_APP  ||
+				h_tmp == _SS_EFI_BOOT ||
+				h_tmp == _SS_EFI_ROM  ||
+				h_tmp == _SS_EFI_RUND ) {
+				
+				subsys = (char*)malloc(strlen(tmp));
+				strcpy(subsys,tmp);
+				if(dmode == 2)
+					printf("Subsystem:         %s\n", subsys);
+				
+			} else {
+				printf("%sUnrecognized subsystem on line %u, hash: '%u'\n", ERROR_H, lines, hash(sline));
+				bob_exit(1);
+			}
 			break;
 		}
 		
@@ -209,8 +236,8 @@ void parse_conf(void) {
 			break;
 		}
 		default : {
-			if(dmode >= 1)
-				printf("%sSyntax error, hash: '%u'\n", WARN_H, hash(sline));
+			printf("%sSyntax error on line %u, hash: '%u'\n", ERROR_H, lines, hash(sline));
+			bob_exit(1);
 			break;
 		}
 			
@@ -378,14 +405,17 @@ void create_compile(void) {
 
 void create_link(void) {
 	
-	link_command = bob_strcat("link ",bob_strcat(obj_path,"*.obj /ENTRY:mainCRTStartup"));
+	link_command = (char*)malloc(23 + strlen(subsys) + strlen(obj_path));
+	snprintf(link_command, 23 + strlen(subsys) + strlen(obj_path), "link /SUBSYSTEM:%s %s*.obj ", subsys, obj_path);
 	
 	{ //Concatenate all libpaths
 		
 		node_t *cur = lib_paths->head;
 		for(int i = 0; i < lib_paths->size; i++){
-			link_command = bob_strcat(link_command, bob_strcat(" /LIBPATH:.\\", cur->value->value._str));
+			char *libpath_tmp = bob_strcat(" /LIBPATH:.\\", cur->value->value._str);
+			link_command = bob_strcat(link_command, libpath_tmp);
 			cur = cur->next;
+			free(libpath_tmp);
 		}
 	}
 	
@@ -393,8 +423,10 @@ void create_link(void) {
 		
 		node_t *cur = libs->head;
 		for(int i = 0; i < libs->size; i++){
-			link_command = bob_strcat(link_command, bob_strcat(" ", cur->value->value._str));
+			char *lib_tmp = bob_strcat(" ", cur->value->value._str);
+			link_command = bob_strcat(link_command, lib_tmp);
 			cur = cur->next;
+			free(lib_tmp);
 		}
 	}
 	
@@ -416,6 +448,13 @@ int main (int argc, char** argv) {
 	libs      = lnew();
 	
 	parse_conf();
+	
+	//If subsystem was not set use CONSOLE subsystem
+	if(!subsys){
+		subsys = (char*)malloc(8);
+		strcpy(subsys,"CONSOLE");
+	}
+		
 	
 	//If vcvars not set in config try to get it from env variable.
 	if(!vcvarsall) {
@@ -570,6 +609,7 @@ void bob_exit(int exitcode) {
 		free(exe_path);
 	if(obj_path)
 		free(obj_path);
+	free(subsys);
 	
 	if(src_paths)
 		lfree(src_paths);

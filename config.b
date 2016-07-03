@@ -12,3 +12,6 @@ OBJ_PATH|bin\obj\
 
 #Compiles executable path
 EXE_PATH|bin\bob.exe
+
+#Subsystem
+SUB_SYS|CONSOLE

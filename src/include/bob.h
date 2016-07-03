@@ -13,6 +13,17 @@
 #define _DM_MEDIUM  226336838  //print some debug messages
 #define _DM_ALL     193486302  //print all debug messages - verbose!
 
+//Subsystems
+#define _SS_BOOT     59576652
+#define _SS_CONSOLE  3879166584
+#define _SS_WINDOWS  3703371152
+#define _SS_NATIVE   3264802892
+#define _SS_POSIX    231957816
+#define _SS_EFI_APP  3658565612
+#define _SS_EFI_BOOT 4189878919
+#define _SS_EFI_ROM  1809421702
+#define _SS_EFI_RUND 3660502087
+
 //Build File keywords
 #define VCVARSALL 1657761011 //Path to vcvarsall.bat file
 #define SRC_PATH  1616936121 //Path to folder containing all the source files
@@ -21,6 +32,7 @@
 #define EXE_PATH  1196332595 //Generate .exe to
 #define OBJ_PATH  4027152780 //Path to generate .obj files
 #define AD_PARAM  3460907162 //Additional command line parameters
+#define SUB_SYS   3288834957 //Specifies the application subsystem
 #define LIB_PATH  193462236  //Path to folder containing .lib files
 #define LIB       863133480  //Names of .lib files to use when linking
 
@@ -62,6 +74,7 @@ char *obj_path  = NULL;
 char *vcvarsall = NULL;
 char *compile_command = NULL;
 char *link_command = NULL;
+char *subsys = NULL;
 list_t *src_paths;
 list_t *inc_paths;
 list_t *lib_paths;
