@@ -135,8 +135,32 @@ void parse_conf(void) {
 			ad_param = (char*)malloc(strlen(tmp) + 1);
 			strcpy(ad_param,tmp);
 			if(dmode == 2)
-				printf("Additional parameters: %s\n", ad_param);
+				printf("Additional parameters:   %s\n", ad_param);
 			break;
+		}
+		
+		case TARGET_ARCH : {
+			
+			unsigned long h_tmp = hash(tmp);
+			if( h_tmp == _ARCH_X86 ||
+			    h_tmp == _ARCH_X64 ||
+				h_tmp == _ARCH_ARM ||
+				h_tmp == _ARCH_X86_ARM ||
+				h_tmp == _ARCH_X64_ARM ||
+				h_tmp == _ARCH_X86_AMD64 ||
+				h_tmp == _ARCH_AMD64_X86 ) {
+					
+				trgt_arch = (char*)malloc(strlen(tmp) + 1);
+				strcpy(trgt_arch,tmp);
+				if(dmode == 2)
+					printf("Target architecture: %s\n", trgt_arch);
+					
+			} else {
+				printf("%sUnrecognized target architecture on line %u, hash: '%lu'", ERROR_H, lines, h_tmp);
+				bob_exit(1);
+			}
+			break;
+			
 		}
 		
 		case SUB_SYS  : {
@@ -152,13 +176,13 @@ void parse_conf(void) {
 				h_tmp == _SS_EFI_ROM  ||
 				h_tmp == _SS_EFI_RUND ) {
 				
-				subsys = malloc(strlen(tmp) + 1);
+				subsys = (char*)malloc(strlen(tmp) + 1);
 				strcpy(subsys,tmp);
 				if(dmode == 2)
-					printf("Subsystem:         %s\n", subsys);
+					printf("Subsystem:           %s\n", subsys);
 				
 			} else {
-				printf("%sUnrecognized subsystem on line %u, hash: '%u'\n", ERROR_H, lines, hash(sline));
+				printf("%sUnrecognized subsystem on line %u, hash: '%lu'\n", ERROR_H, lines, h_tmp);
 				bob_exit(1);
 			}
 			break;
@@ -171,14 +195,14 @@ void parse_conf(void) {
 			
 			ladd(src_paths,gvtnew(src_path,T_STR));
 			if(dmode == 2)
-				printf("Source path:           %s\n", tmp);
+				printf("Source path:             %s\n", tmp);
 			break;
 		}
 		case MAIN_SRC  : {
 			main_src = (char*)malloc(strlen(tmp) + 1);
 			strcpy(main_src,tmp);
 			if(dmode == 2)
-				printf("Main source:           %s\n", main_src);
+				printf("Main source:             %s\n", main_src);
 			break;
 		}
 		case INC_PATH  : {
@@ -189,21 +213,21 @@ void parse_conf(void) {
 			
 			ladd(inc_paths,gvtnew(inc_path,T_STR));
 			if(dmode == 2)
-				printf("Include path:          %s\n", tmp);
+				printf("Include path:            %s\n", tmp);
 			break;
 		}
 		case EXE_PATH  : {
 			exe_path = (char*)malloc(strlen(tmp) + 1);
 			strcpy(exe_path,tmp);
 			if(dmode == 2)
-				printf("Executable path:       %s\n", exe_path);
+				printf("Executable path:         %s\n", exe_path);
 			break;
 		}
 		case OBJ_PATH  : {
 			obj_path = (char*)malloc(strlen(tmp) + 1);
 			strcpy(obj_path,tmp);
 			if(dmode == 2)
-				printf("Object path:           %s\n", obj_path);
+				printf("Object path:             %s\n", obj_path);
 			break;
 		}
 		case LIB_PATH  : {
@@ -214,7 +238,7 @@ void parse_conf(void) {
 			
 			ladd(lib_paths,gvtnew(lib_path,T_STR));
 			if(dmode == 2)
-				printf("Library path:          %s\n", tmp);
+				printf("Library path:            %s\n", tmp);
 			break;
 		}
 		case LIB       : {
@@ -225,14 +249,14 @@ void parse_conf(void) {
 			
 			ladd(libs,gvtnew(lib,T_STR));
 			if(dmode == 2)
-				printf("Library:               %s\n", tmp);
+				printf("Library:                 %s\n", tmp);
 			break;
 		}
 		case VCVARSALL : {
 			vcvarsall = (char*)malloc(strlen(tmp) + 1);
 			strcpy(vcvarsall,tmp);
 			if(dmode == 2)
-				printf("vcvarsall:             %s\n", tmp);
+				printf("vcvarsall:               %s\n", tmp);
 			break;
 		}
 		default : {
@@ -464,18 +488,24 @@ int main (int argc, char** argv) {
 		subsys = (char*)malloc(8);
 		strcpy(subsys,"CONSOLE");
 	}
-		
+	
+	//If target arch was not set use x86
+	if(!trgt_arch){
+		trgt_arch = (char*)malloc(4);
+		strcpy(trgt_arch,"x86");
+	}
 	
 	//If vcvars not set in config try to get it from env variable.
 	if(!vcvarsall) {
 		char *vcinstalldir = getenv("VS140COMNTOOLS");
 		if(vcinstalldir) {
 			char *quoted_vcdir = bob_strcat("\"",vcinstalldir);
-			vcvarsall = bob_strcat(quoted_vcdir, "..\\..\\VC\\vcvarsall.bat\" x86");
+			vcvarsall = bob_strcat(quoted_vcdir, "..\\..\\VC\\vcvarsall.bat\" ");
+			vcvarsall = bob_strcat(vcvarsall, trgt_arch);
 			free(quoted_vcdir);
 		} else {
 			if(dmode >= 1)
-				printf("%sVCWARSALL not set, execution will continue but commands may fail.\n", WARN_H);
+				printf("%sVCVARSALL not set, execution will continue but commands may fail.\n", WARN_H);
 		}
 	}
 	

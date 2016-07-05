@@ -1,7 +1,7 @@
 #ifndef _BOB_H_
 #define _BOB_H_
 
-#define MEMCHECK_BUILD
+//#define MEMCHECK_BUILD
 
 //Arguments
 #define DEBUG_ARGS false
@@ -26,17 +26,28 @@
 #define _SS_EFI_ROM  1809421702
 #define _SS_EFI_RUND 3660502087
 
+//Architectures
+#define _ARCH_X86       193509379
+#define _ARCH_X64       193509511
+#define _ARCH_ARM   	193486501
+#define _ARCH_X86_ARM   2679368202
+#define _ARCH_X64_ARM   2598725574
+#define _ARCH_X86_AMD64 1548990342
+#define _ARCH_AMD64_X86 1088709958
+
+
 //Build File keywords
-#define VCVARSALL 1657761011 //Path to vcvarsall.bat file
-#define SRC_PATH  1616936121 //Path to folder containing all the source files
-#define MAIN_SRC  3339407313 //Path to source file containing main function
-#define INC_PATH  4058331371 //Path to folder containing header files
-#define EXE_PATH  1196332595 //Generate .exe to
-#define OBJ_PATH  4027152780 //Path to generate .obj files
-#define AD_PARAM  3460907162 //Additional command line parameters
-#define SUB_SYS   3288834957 //Specifies the application subsystem
-#define LIB_PATH  193462236  //Path to folder containing .lib files
-#define LIB       863133480  //Names of .lib files to use when linking
+#define VCVARSALL   1657761011 //Path to vcvarsall.bat file
+#define SRC_PATH    1616936121 //Path to folder containing all the source files
+#define MAIN_SRC    3339407313 //Path to source file containing main function
+#define INC_PATH    4058331371 //Path to folder containing header files
+#define EXE_PATH    1196332595 //Generate .exe to
+#define OBJ_PATH    4027152780 //Path to generate .obj files
+#define AD_PARAM    3460907162 //Additional command line parameters
+#define SUB_SYS     3288834957 //Specifies the application subsystem
+#define LIB_PATH    193462236  //Path to folder containing .lib files
+#define LIB         863133480  //Names of .lib files to use when linking
+#define TARGET_ARCH 350367337  //Target architecture
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,6 +88,7 @@ char *vcvarsall = NULL;
 char *compile_command = NULL;
 char *link_command = NULL;
 char *subsys = NULL;
+char *trgt_arch = NULL;
 list_t *src_paths;
 list_t *inc_paths;
 list_t *lib_paths;
