@@ -101,6 +101,7 @@ list_t *prev_hashes;
 
 void parse_args(int argc, char** argv);
 void parse_conf(void);
+void parse_conf2(void);
 bool missing_var(void);
 void parse_chfile(void);
 void create_chfile(void);
