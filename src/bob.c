@@ -140,7 +140,6 @@ void parse_conf(void) {
 		}
 		
 		case TARGET_ARCH : {
-			
 			unsigned long h_tmp = hash(tmp);
 			if( h_tmp == _ARCH_X86 ||
 			    h_tmp == _ARCH_X64 ||
@@ -272,72 +271,6 @@ void parse_conf(void) {
 	
 }
 
-void parse_conf2(void) {
-
-	if(conf_fle == NULL){
-		printf("%sNull configuration file!\n", ERROR_H);
-		bob_exit(1);
-	}
-	config = fopen(conf_fle,"r");
-	if(config == NULL){
-		printf("%sCan't open build configuration file!\n", ERROR_H);
-		bob_exit(1);
-	}
-	
-	if(dmode == 2)
-		printf("-[CONFIG FILE BEGIN]-\n");
-	
-	int cur_fchar;
-	
-	bool prev_fwd_slash = false;
-	
-	while((cur_fchar = fgetc(config)) != EOF) {
-		
-		switch((char)cur_fchar){
-		
-		case '*' : {
-			
-			if(prev_fwd_slash)
-				while((char)(cur_fchar = fgetc(config)) != '*')
-					continue;
-			
-			prev_fwd_slash = false;
-			break;
-		}
-		
-		case '/' : {
-			
-			prev_fwd_slash = true;
-			break;
-		}
-			
-		default : {
-			
-			if(cur_fchar >= 97 && cur_fchar <= 122 ||  //check if char is any lower case letter
-			   cur_fchar >= 65 && cur_fchar <= 90 ||   //check if char is any upper case letter
-			   cur_fchar >= 48 && cur_fchar <= 57 ||   //check if char is any number 0 - 9
-			   cur_fchar == 95                     ) { //check if char is _
-				   
-				
-				   
-			} else {
-			
-				printf("%c",(char)cur_fchar);
-			
-			}
-			prev_fwd_slash = false;
-			break;
-		}
-			
-		}
-		
-	}
-	printf("\n");
-	
-	bob_exit(0);
-	
-}
-
 bool missing_var(void) {
 	
 	return  main_src == NULL ||
@@ -369,7 +302,6 @@ void parse_chfile(void) {
 			char *filename = strtok(line,SEPARATOR);
 			char *unconvhash = strtok(NULL,SEPARATOR);
 			unsigned long filehash = strtoul(unconvhash, (char**)NULL, 10);
-			
 			gvalue filename_gv;
 			filename_gv._str = (char*)malloc(strlen(filename) + 1);
 			strcpy(filename_gv._str,filename);
@@ -548,7 +480,6 @@ int main (int argc, char** argv) {
 	libs      = lnew();
 	
 	parse_conf();
-	//parse_conf2(); WIP :D
 	
 	//If subsystem was not set use CONSOLE subsystem
 	if(!subsys){

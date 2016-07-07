@@ -68,7 +68,7 @@ typedef enum {
 
 const unsigned short VERSION              = 3;
 const char          *SOURCE_EXTENSIONS[3] = { ".c", ".cc", ".cpp" };
-const char          *SEPARATOR            = "|";
+const char          *SEPARATOR            = "=";
 //Message headers
 const char          *INFO_H               = "[Info]: ";
 const char          *DEBUG_H              = "[Debug]: ";
@@ -101,7 +101,6 @@ list_t *prev_hashes;
 
 void parse_args(int argc, char** argv);
 void parse_conf(void);
-void parse_conf2(void);
 bool missing_var(void);
 void parse_chfile(void);
 void create_chfile(void);
