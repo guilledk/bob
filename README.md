@@ -12,24 +12,24 @@ It only requires a file with five variables to start building your project!
 Example build config file:
 ```
 #Comments start with '#'
-#'|' is the separator
+#'=' is the separator
 #Source directory path, more than one can be set
-SRC_PATH|src
+SRC_PATH=src
 
 #Source file containing main()
-MAIN_SRC|src\bob.c
+MAIN_SRC=src\bob.c
 
 #Include path, more than one can be set
-INC_PATH|src\include\
+INC_PATH=src\include\
 
 #Compiled object files output path
-OBJ_PATH|bin\obj\
+OBJ_PATH=bin\obj\
 
 #Compiled executable output path
-EXE_PATH|bin\bob.exe
+EXE_PATH=bin\bob.exe
 
 #vcvarsall.bat file location, this is not required but its recommended
-VCVARSALL|"C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
+VCVARSALL="C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat"
 ```
 You must have either Visual Studio or [Visual C++ Build Tools](https://blogs.msdn.microsoft.com/vcblog/2016/03/31/announcing-the-official-release-of-the-visual-c-build-tools-2015/)(Recommended).
 
