@@ -1,9 +1,9 @@
 # Bob
-######A build tool for people that hate build tools.
+### A build tool for people that hate build tools.
 
 Bob is a simple CLI tool for compiling and linking C/C++ applications, for now it supports Microsoft's C/C++ compiler but it was built with portability in mind.
 
-###Features:
+### Features:
   - Only builds changed files
   - Can build projects with extra libraries
   - More to come!
@@ -36,11 +36,11 @@ You must have either Visual Studio or [Visual C++ Build Tools](https://blogs.msd
 For more info about config file syntax and command parameters that `bob` accepts, look in the wiki.
 
   
-###Download
+### Download
 
 [Current Release](https://github.com/Darthkpo/bob/releases/latest)
 
-###Building from source
+### Building from source
 
 Download `bob` and run:
 ```
@@ -48,16 +48,16 @@ bob
 ```
 at the top of the repo.
 
-###License
+### License
 
 MIT
 
-###Contributing
+### Contributing
 
 I will accept pull requests.
 If anyone wants to fix memory leaks, go ahead.
 
-###Why?
+### Why?
 
 I'm one of those people that likes to do everything by hand, before bob I was using a batch file that contained the full compiler and linker command and simply built all the .c and .cc files. At first everything was fine until the command was 4000 characters long and it took 5 mins to build everything. So I started working with bob.
 Honestly this is mostly for my self, but I figured that if anyone wants to contribute, why not? I'm also taking it as an opportunity to learn.
